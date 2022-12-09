@@ -26,6 +26,7 @@ def update_in_place(trees, row, col, direction):
     return trees
 
 def fill_levels(trees):
+    # keeping track of the highest tree in each direction
     # first we check west and north
     for row in range(1, len(trees) - 1):
         for col in range(1, len(trees[row]) - 1):
@@ -45,40 +46,36 @@ def parse(lines):
         rows.append([Tree(int(i)) for i in line.strip()])
     return rows
 
+def count_visible_trees(trees):
+    return sum([any([tree.height > limit for limit in tree.max_level]) for row in trees for tree in row])
+
 def part1(lines):
     trees = parse(lines)
     trees = fill_levels(trees)
-    # now we count the visible trees
-    nr_visible_trees = 0
-    for row in trees:
-        for tree in row:
-            if any([tree.height > limit for limit in tree.max_level]):
-                nr_visible_trees += 1
-    return nr_visible_trees
+    return count_visible_trees(trees)
 
 
 def explicit_looking(trees):
     max_scenic_score = -1
+    # outside trees have score 0
     for row in range(1, len(trees) - 1):
         for col in range(1, len(trees[row]) - 1):
             scenic_score = 1
             for direction in DIRECTIONS:
-                temp_i = row + ROW_DIFF[direction]
-                temp_j = col + COL_DIF[direction]
-                length = 1
-                while(0 <= temp_i and temp_i < len(trees) and
-                      0 <= temp_j and temp_j < len(trees[row]) and
-                      trees[temp_i][temp_j].height < trees[row][col].height):
-                    temp_i += ROW_DIFF[direction]
-                    temp_j += COL_DIF[direction]
-                    length += 1
-                if(temp_i < 0 or temp_i == len(trees) or temp_j < 0 or temp_j == len(trees[row])):
-                    length -= 1
-                scenic_score *= length
-            if  scenic_score > max_scenic_score:
-                max_scenic_score = scenic_score
+                # look in the right direction untill we encounter a tree of at least the same height or the edge
+                look_row, look_col = row + ROW_DIFF[direction], col + COL_DIF[direction]
+                looking_distance = 1
+                while(0 <= look_row and look_row < len(trees) and
+                      0 <= look_col and look_col < len(trees[row]) and
+                      trees[look_row][look_col].height < trees[row][col].height):
+                    look_row += ROW_DIFF[direction]
+                    look_col += COL_DIF[direction]
+                    looking_distance += 1
+                # if we reached the edge, we have counted one tree too many (the edge is not a tree)
+                looking_distance -= (look_row < 0 or look_row == len(trees) or look_col < 0 or look_col == len(trees[row]))
+                scenic_score *= looking_distance
+            max_scenic_score = max(scenic_score, max_scenic_score)
     return max_scenic_score
-
 
 
 def part2(lines):

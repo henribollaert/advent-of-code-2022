@@ -6,8 +6,14 @@ from timeit import default_timer as timer
 X_DIF = {'R' : 1, 'U' : 0,  'D' : 0, 'L' : -1}
 Y_DIF = {'R' : 0, 'U' : 1,  'D' : -1, 'L' : 0}
 
-def sign(a):
-    return (a > 0) - (a < 0)
+def sign(x):
+    """
+    Sign function:
+    if x < 0: -1
+    if x = 0: 0
+    if x >0: 1
+    """
+    return (x > 0) - (x < 0)
 
 def chebyshev_distance(x1, x2):
     return max([abs(sum(pair)) for pair in zip(x1, [-1 * x for x in x2])])
@@ -35,19 +41,24 @@ def part1old(lines, verbose=False):
 def simulate_rope(moves, length=10):
     """
     length includes H: H, 1, 2, ..., 9 has length 10
+    Head is at position 0 in knots array
     """
-    knots = [(0,0) for _ in range(length)]
-    tail_positions = set([knots[-1]])
+    knots = [(0,0) for _ in range(length)]  # all of the knots
+    tail_positions = set([knots[-1]])  # set to keep track of visited positions
     for direction, amount in moves:
         for _ in range (amount):
-            knots[0] = tuple(map(sum, zip(knots[0], (X_DIF[direction], Y_DIF[direction]))))
+            # moving the head
+            knots[0] = tuple(map(sum, zip(knots[0], (X_DIF[direction], Y_DIF[direction]))))  
+            # moving the rest of the knots. once 1 not has not moved, all subsequent knots don't move either
             i = 1
             while i < length and chebyshev_distance(knots[i - 1], knots[i]) > 1:
+                # knots move at most 1 in the direction of the previous one
                 knots[i] = tuple(map(sum, zip(knots[i], 
                                               (sign(knots[i-1][0] - knots[i][0]),
                                                sign(knots[i-1][1] - knots[i][1])))))
                 i += 1
             if i == length:
+                # only add a new position if the tail has moved. we need a set because we can visit the same spot twice
                 tail_positions.add(knots[-1])
     return len(tail_positions)
 

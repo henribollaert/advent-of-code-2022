@@ -3,8 +3,11 @@ from abc import ABC, abstractmethod
 import re
 
 class Item (ABC):
+    """
+    Abstract class representing an Item on the computer, which has a name, a parent and a level (for printing).
+    """
 
-    OFFSET = '  '
+    OFFSET = '  '  # just for making nice output
 
     def __init__(self, name, parent, level = None) -> None:
         self.name = name
@@ -31,6 +34,9 @@ class Item (ABC):
         print(self.get_string())
 
 class Directory(Item):
+    """
+    Class representing a directory, which has a list of subitems.
+    """
     def __init__(self, name, parent, level=None) -> None:
         super().__init__(name, parent, level)
         self.subitems = []
@@ -51,6 +57,9 @@ class Directory(Item):
         print(Item.OFFSET * self.level + "end of " + self.get_name())
     
 class File(Item):
+    """
+    Class representing a file on the computer, which also has a size.
+    """
     def __init__(self, name: str, parent: Directory, size: int, level=None) -> None:
         super().__init__(name, parent, level)
         self.size = size
