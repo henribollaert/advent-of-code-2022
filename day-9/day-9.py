@@ -1,4 +1,5 @@
 import os
+from timeit import default_timer as timer
 
 # we start counting 0,0 from bottom left corner and increase x to right and y to up
 
@@ -46,14 +47,26 @@ def simulate_rope(moves, length=10):
                                               (sign(knots[i-1][0] - knots[i][0]),
                                                sign(knots[i-1][1] - knots[i][1])))))
                 i += 1
-            tail_positions.add(knots[-1])
+            if i == length:
+                tail_positions.add(knots[-1])
     return len(tail_positions)
 
+def get_moves(lines):
+    return [(line.split()[0], int(line.split()[1])) for line in lines]
+
 def part1(lines):
-    return simulate_rope([(line.split()[0], int(line.split()[1])) for line in lines], 2)
+    start = timer()
+    result = simulate_rope(get_moves(lines), 2)
+    end = timer()
+    print(end - start)
+    return result
 
 def part2(lines):
-    return simulate_rope([(line.split()[0], int(line.split()[1])) for line in lines], 10)
+    start = timer()
+    result = simulate_rope(get_moves(lines), 10)
+    end = timer()
+    print(end - start)
+    return result
 
 def main():
     __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
