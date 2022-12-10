@@ -1,14 +1,11 @@
 import os
 from abc import ABC, abstractmethod
 
-ADDX_LENGTH = 2
-DISPLAY_HEIGHT = 6
-DISPLAY_WIDTH = 40
-
 class CPU(ABC):
-    def __init__(self, verbose = False) -> None:
+    def __init__(self, addx_length = 2, verbose = False) -> None:
         self.reg_x = 1
         self.cycle = 1
+        self.addx_length = addx_length
         self.verbose = verbose
     
     def get_signal_strength(self):
@@ -32,18 +29,20 @@ class CPU(ABC):
         Adds V to the value in register X after 2 cycles, i.e.,
         during the 2 cycles, the value remains unchanged.
         """
-        for _ in range(ADDX_LENGTH):
+        for _ in range(self.addx_length):
             self.tick()
         self.reg_x += v
 
 
 class TickingCPU(CPU):
-    def __init__(self, verbose=False) -> None:
-        super().__init__(verbose)
+    def __init__(self, interesting_freq = 40, interesting_offset = 20, addx_length = 2, verbose=False) -> None:
+        super().__init__(addx_length, verbose)
+        self.interesting_freq = interesting_freq
+        self.interesting_offset = interesting_offset
         self.interesting_values = dict()
 
     def tick(self):
-        if self.cycle % DISPLAY_WIDTH == 20:
+        if self.cycle % self.interesting_freq == self.interesting_offset:
             if self.verbose:
                 print(f"During cycle {self.cycle}, signal strength is {self.get_signal_strength()}.")
             self.interesting_values[self.cycle]= self.get_signal_strength()
@@ -54,22 +53,26 @@ class TickingCPU(CPU):
 
     
 class DrawingCPU(CPU):
-    def __init__(self, verbose=False) -> None:
-        super().__init__(verbose)
+    def __init__(self, on_char = '#', off_char = '.', display_width = 40, display_height = 6, addx_length = 2, verbose=False) -> None:
+        super().__init__(addx_length, verbose)
         self.display = []
+        self.on_char = on_char
+        self.off_char = off_char
+        self.display_width = display_width
+        self.display_height = display_height
 
     def tick(self):
-        cur = (self.cycle - 1) % DISPLAY_WIDTH
+        cur = (self.cycle - 1) % self.display_width
         self.cycle += 1
         if abs(cur - self.reg_x) <= 1:
-             self.display.append('#')
+             self.display.append(self.on_char)
         else:
-            self.display.append('.')
+            self.display.append(self.off_char)
 
     def get_display_string(self):
         s = "\n"
-        for row in range(DISPLAY_HEIGHT):
-            s += "".join(self.display[row*DISPLAY_WIDTH:(row+1)*DISPLAY_WIDTH]) + "\n"
+        for row in range(self.display_height):
+            s += "".join(self.display[row*self.display_width:(row+1)*self.display_width]) + "\n"
         return s
             
 
