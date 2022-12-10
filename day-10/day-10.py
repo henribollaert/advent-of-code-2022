@@ -53,10 +53,12 @@ class TickingCPU(CPU):
 
     
 class DrawingCPU(CPU):
-    def __init__(self, on_char = '#', off_char = '.', display_width = 40, display_height = 6, addx_length = 2, verbose=False) -> None:
+    def __init__(self, on_char = '[]', off_char = None, display_width = 40, display_height = 6, addx_length = 2, verbose=False) -> None:
         super().__init__(addx_length, verbose)
         self.display = []
         self.on_char = on_char
+        if off_char == None:
+            off_char = ' ' * len(self.on_char)
         self.off_char = off_char
         self.display_width = display_width
         self.display_height = display_height
