@@ -1,72 +1,95 @@
 import os
+from abc import ABC, abstractmethod
 
-# addx V: adds V to the value in register X after 2 cycles
-# i.e. during the 2 cycles, the value remains unchanged
-
-CYCLES_OF_INTEREST = [20, 60, 100, 140, 180, 220]
 ADDX_LENGTH = 2
 DISPLAY_HEIGHT = 6
 DISPLAY_WIDTH = 40
 
-class CPU:
+class CPU(ABC):
     def __init__(self, verbose = False) -> None:
         self.reg_x = 1
         self.cycle = 1
         self.verbose = verbose
-        self.interesting_values = dict()
-        self.display = []
     
     def get_signal_strength(self):
         return self.reg_x * self.cycle
 
+    @abstractmethod
     def tick(self):
-        if self.cycle in CYCLES_OF_INTEREST:
+        """
+        Should specifiy what happens when a cycle passes, including any checks or drawing.
+        """
+        pass
+
+    def noop(self):
+        """
+        Skips 1 cycle
+        """
+        self.tick()
+    
+    def addx(self, v):
+        """
+        Adds V to the value in register X after 2 cycles, i.e.,
+        during the 2 cycles, the value remains unchanged.
+        """
+        for _ in range(ADDX_LENGTH):
+            self.tick()
+        self.reg_x += v
+
+
+class TickingCPU(CPU):
+    def __init__(self, verbose=False) -> None:
+        super().__init__(verbose)
+        self.interesting_values = dict()
+
+    def tick(self):
+        if self.cycle % DISPLAY_WIDTH == 20:
             if self.verbose:
                 print(f"During cycle {self.cycle}, signal strength is {self.get_signal_strength()}.")
             self.interesting_values[self.cycle]= self.get_signal_strength()
         self.cycle += 1
-    
-    def addx(self, v):
-        self.reg_x += v
 
-    def draw(self):
+    
+class DrawingCPU(CPU):
+    def __init__(self, verbose=False) -> None:
+        super().__init__(verbose)
+        self.display = []
+
+    def tick(self):
         cur = (self.cycle - 1) % DISPLAY_WIDTH
         self.cycle += 1
         if abs(cur - self.reg_x) <= 1:
-            self.display.append('#')
+             self.display.append('#')
         else:
             self.display.append('.')
-            
 
+    def get_display_string(self):
+        s = "\n"
+        for row in range(DISPLAY_HEIGHT):
+            s += "".join(self.display[row*DISPLAY_WIDTH:(row+1)*DISPLAY_WIDTH]) + "\n"
+        return s
+            
 
 def get_instructions(lines):
     return [line.split() for line in lines]
+
+def run_cpu(cpu:CPU, instructions):
+    for instruction in instructions:
+        if instruction[0] == 'noop':
+            cpu.noop()
+        else:
+            cpu.addx(int(instruction[1]))
         
 
 def part1(lines):
-    cpu = CPU()
-    for instruction in get_instructions(lines):
-        # print(instruction)
-        if instruction[0] == 'noop':
-            cpu.tick()
-        else:
-            for _ in range(ADDX_LENGTH):
-                cpu.tick()
-            cpu.addx(int(instruction[1]))
+    cpu = TickingCPU()
+    run_cpu(cpu, get_instructions(lines))
     return sum([val for key, val in cpu.interesting_values.items()])
 
 def part2(lines):
-    cpu = CPU()
-    for instruction in get_instructions(lines):
-        if instruction[0] == 'noop':
-            cpu.draw()
-        else:
-            for _ in range(ADDX_LENGTH):
-                cpu.draw()
-            cpu.addx(int(instruction[1]))
-    for row in range(DISPLAY_HEIGHT):
-        print("".join(cpu.display[row*DISPLAY_WIDTH:(row+1)*DISPLAY_WIDTH]))
-    return "See above"
+    cpu = DrawingCPU()
+    run_cpu(cpu, get_instructions(lines))
+    return cpu.get_display_string()
 
 
 def main():
@@ -76,8 +99,8 @@ def main():
     lines = f.readlines()
     f.close()
 
-    print("Score for part 1:", part1(lines))
-    print("Score for part 2:", part2(lines))
+    print("Combined signal strength for part 1:", part1(lines))
+    print("Display for part 2:", part2(lines))
 
 if __name__ == "__main__":
     main()
