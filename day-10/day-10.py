@@ -49,6 +49,9 @@ class TickingCPU(CPU):
             self.interesting_values[self.cycle]= self.get_signal_strength()
         self.cycle += 1
 
+    def get_combined_signal_strength(self):
+        return sum([val for key, val in self.interesting_values.items()])
+
     
 class DrawingCPU(CPU):
     def __init__(self, verbose=False) -> None:
@@ -84,7 +87,7 @@ def run_cpu(cpu:CPU, instructions):
 def part1(lines):
     cpu = TickingCPU()
     run_cpu(cpu, get_instructions(lines))
-    return sum([val for key, val in cpu.interesting_values.items()])
+    return cpu.get_combined_signal_strength()
 
 def part2(lines):
     cpu = DrawingCPU()
