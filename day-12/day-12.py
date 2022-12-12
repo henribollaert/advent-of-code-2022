@@ -1,4 +1,5 @@
 import os
+from collections import deque
 
 OFFSET = ord('a')
 
@@ -27,53 +28,32 @@ def can_go(f, t):
 ROW_DIFF = [ -1 , 0 , +1 , 0]
 COL_DIFF = [0, +1, 0, -1]
 
-# it's just BFS
+# it's just BFS, but we go in reverse, because that makes part 2 easier
 def shortest_path(start, end, topography):
     width, height = len(topography), len(topography[0])
     distances = [[-1] * len(row) for row in topography]
-    distances[start[0]][start[1]] = 0
-    q = [start]
+    distances[end[0]][end[1]] = 0
+    q = deque([end])
     while len(q) > 0:
-        v = q.pop(0)
-        if v == end:
-            return distances[v[0]][v[1]]
+        v_x, v_y = q.popleft()
+        if (v_x, v_y) == start or (start == None and topography[v_x][v_y] == 0):
+            return distances[v_x][v_y]
         for i in range(4):
-            w = (v[0] + ROW_DIFF[i], v[1] + COL_DIFF[i]) 
-            if 0 <= w[0] and w[0] < width and 0 <= w[1] and w[1] < height and \
-                    distances[w[0]][w[1]] == -1 and \
-                    can_go(topography[v[0]][v[1]], topography[w[0]][w[1]]):
-                distances[w[0]][w[1]] = distances[v[0]][v[1]] + 1
-                q.append(w)
-    return width * height
+            w_x, w_y = v_x + ROW_DIFF[i], v_y + COL_DIFF[i]
+            if 0 <= w_x < width and 0 <= w_y < height and distances[w_x][w_y] == -1 and \
+                    can_go(topography[w_x][w_y], topography[v_x][v_y]):
+                distances[w_x][w_y] = distances[v_x][v_y] + 1
+                q.append((w_x, w_y))
 
 def part1(lines):
     start, end, topography = parse(lines)
     return shortest_path(start, end, topography)
 
-# initially I calculated the distance to end from each 'a' but this is way faster
+# initially I calculated the distance to end from each 'a' but this way is faster
 # take care, we swapped to and from here since we're going backwards
-def shortest_from_end(end, topography):
-    width, height = len(topography), len(topography[0])
-    distances = [[-1] * len(row) for row in topography]
-    distances[end[0]][end[1]] = 0
-    q = [end]
-    shortest = width * height
-    while len(q) > 0:
-        v = q.pop(0)
-        if topography[v[0]][v[1]] == 0 and distances[v[0]][v[1]] < shortest:
-            shortest = distances[v[0]][v[1]]
-        for i in range(4):
-            w = (v[0] + ROW_DIFF[i], v[1] + COL_DIFF[i]) 
-            if 0 <= w[0] and w[0] < width and 0 <= w[1] and w[1] < height and \
-                    distances[w[0]][w[1]] == -1 and \
-                    can_go(topography[w[0]][w[1]], topography[v[0]][v[1]]):
-                distances[w[0]][w[1]] = distances[v[0]][v[1]] + 1
-                q.append(w)
-    return shortest
-
 def part2(lines):
     _, end, topography = parse(lines)
-    return shortest_from_end(end, topography)
+    return shortest_path(None, end, topography)
 
 def main():
     __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
