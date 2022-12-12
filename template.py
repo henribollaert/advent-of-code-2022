@@ -1,5 +1,8 @@
 import os
 
+def parse(input):
+    pass
+
 def part1(lines):
     pass
 
