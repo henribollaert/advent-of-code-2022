@@ -1,6 +1,6 @@
 import os
 
-def parse(input):
+def parse(lines):
     pass
 
 def part1(lines):
