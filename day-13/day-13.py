@@ -6,8 +6,8 @@ from json import loads
 def get_pairs(input):
     pairs = []
     for i in range((len(input) + 1)//3):
-        p1 = eval(input[3*i])
-        p2 = eval(input[3*i+1])
+        p1 = loads(input[3*i])
+        p2 = loads(input[3*i+1])
         pairs.append((p1,p2))
     return pairs
 
@@ -15,7 +15,7 @@ def get_all(lines):
     packets = []
     for line in lines:
         if len(line) > 1:
-            packets.append(eval(line))
+            packets.append(loads(line))
     return packets
 
 def compare(l, r):
