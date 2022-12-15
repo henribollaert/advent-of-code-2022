@@ -1,13 +1,22 @@
 import os
+from timeit import default_timer as timer
 
 def parse(lines):
     pass
 
 def part1(lines):
-    pass
+    start = timer()
+
+    end = timer()
+
+    print(f'In {(end - start)*1000}ms.')
 
 def part2(lines):
-    pass
+    start = timer()
+
+    end = timer()
+
+    print(f'In {(end - start)*1000}ms.')
 
 def main():
     __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
