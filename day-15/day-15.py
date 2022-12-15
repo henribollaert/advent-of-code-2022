@@ -1,45 +1,9 @@
 import os
+from timeit import default_timer as timer
 
 
 def manhattan_distance(x, y):
     return sum([abs(c_x - c_y) for c_x, c_y in zip(x, y)])
-
-# i guess we have to be smart and not use a cave map
-
-class CaveMap:
-    def __init__(self, min_row, max_row, min_col, max_col) -> None:
-        self.cave_map = [['.' for _ in range(min_col, max_col+1)] for _ in range(min_row, max_row + 1)]
-        self.row_offset = min_row
-        self.column_offset = min_col
-        self.num_rows = max_row + 1 - min_row
-        self.num_cols = max_col + 1 - min_col
-
-    def put(self, s, row, col):
-        self.cave_map[row - self.row_offset][col - self.column_offset] = s
-
-    def get(self, row, col):
-        return self.cave_map[row - self.row_offset][col - self.column_offset]        
-
-    def fill(self, sensor):
-        self.put('S', sensor.row, sensor.col)
-        self.put('B', sensor.beacon_row, sensor.beacon_col)
-        for row in range(sensor.get_range() + 1):
-            for col in range(sensor.get_range() - row + 1):
-                if self.get(sensor.row - row, sensor.col - col) == '.':
-                    self.put('#', sensor.row - row, sensor.col - col)
-                if self.get(sensor.row - row, sensor.col + col) == '.':
-                    self.put('#', sensor.row - row, sensor.col + col)
-                if self.get(sensor.row + row, sensor.col - col) == '.':
-                    self.put('#', sensor.row + row, sensor.col - col)
-                if self.get(sensor.row + row, sensor.col + col) == '.':
-                    self.put('#', sensor.row + row, sensor.col + col)
-
-    def check_row(self, row):
-        not_present = 0
-        for col in range(self.num_cols):
-            if self.cave_map[row - self.row_offset][col] == '#':
-                not_present += 1
-        return not_present
 
 class Sensor:
     def __init__(self, location, closest_beacon) -> None:
@@ -55,7 +19,6 @@ class Sensor:
                f"closest beacon is at x={self.beacon_col}, y={self.beacon_row}"
 
 
-
 def get_value(s):
     return int(s.strip(':,\n').split('=')[-1])
 
@@ -67,25 +30,9 @@ def parse(lines):
                               (get_value(parts[-2]), get_value(parts[-1]))))
     return sensors
 
-def part1_slow(lines, row_of_interest=10):
-    sensors = parse(lines)
-    min_column = max_column = min_row = max_row = 0
-    for sensor in sensors:
-        min_row = min(min_row, sensor.row - sensor.get_range(), sensor.beacon_row)
-        max_row = max(max_row, sensor.row + sensor.get_range(), sensor.beacon_row)
-        min_column = min(min_column, sensor.col - sensor.get_range() , sensor.beacon_col)
-        max_column = max(max_column, sensor.col + sensor.get_range(), sensor.beacon_col)
-    cave_map = CaveMap(min_row, max_row, min_column, max_column)
-    for sensor in sensors:
-        cave_map.fill(sensor)
-
-
-    print("".join(cave_map.cave_map[row_of_interest - cave_map.row_offset]))
-    
-    return cave_map.check_row(row_of_interest)
-
 def part1(lines, row_of_interest):
     sensors = parse(lines)
+    start = timer()
     occupied_slots = set()
     for sensor in sensors:
         for i in range(sensor.get_range()  - abs(sensor.row - row_of_interest)+ 1):
@@ -96,8 +43,30 @@ def part1(lines, row_of_interest):
             occupied_slots.remove(sensor.col)
         if sensor.beacon_row == row_of_interest and sensor.beacon_col in occupied_slots:
             occupied_slots.remove(sensor.beacon_col)
+    end = timer()
+    print(f"In {end-start}s")
 
     return len(occupied_slots)  
+
+# with a hint from Charlotte, way faster
+def part1_with_intervals(lines, row_of_interest):
+    sensors = parse(lines)
+    start = timer()
+    smallest = largest = 0
+    for sensor in sensors:
+        smallest = min(smallest, sensor.col - (sensor.get_range()  - abs(sensor.row - row_of_interest)))
+        largest = max(largest, sensor.col + (sensor.get_range()  - abs(sensor.row - row_of_interest)))
+    for sensor in sensors:
+        taken = set()
+        if sensor.row == row_of_interest and smallest <= sensor.col <= largest:
+            taken.add(sensor.col)
+        if sensor.beacon_row == row_of_interest and smallest <= sensor.beacon_col <= largest:
+            taken.add(sensor.beacon_col)
+    res = largest - smallest - len(taken)
+    end = timer()
+    print(f"In {(end-start)*1000}ms")
+
+    return res
 
 
 def get_intersection(a, b):
@@ -109,6 +78,7 @@ def get_intersection(a, b):
 # those boundaries are defined by 4 lines and we can easily calculate them
 def part2supersmart(lines, limit, factor=4000000):
     sensors = parse(lines)
+    start = timer()
     possible = []
     for i, sensor1 in enumerate(sensors):
         a1 = [sensor1.row - sensor1.col + sensor1.range + 1,
@@ -127,7 +97,9 @@ def part2supersmart(lines, limit, factor=4000000):
     for row, col in possible:
         if 0 <= row <= limit and 0 <= col <= limit and \
         not any([manhattan_distance((sensor.row, sensor.col),(row, col)) <= sensor.range for sensor in sensors]):
-                return row + col * factor              
+            end = timer()
+            print(f"In {(end-start)*1000}ms:")
+            return row + col * factor              
 
 # my smartest solution: checking all points on the boundary lines
 def part2(lines, limit, factor=4000000):
@@ -155,7 +127,7 @@ def main():
     lines = f.readlines()
     f.close()
 
-    print("Score for part 1:", part1(lines, row_of_interest=2000000))
+    print("Score for part 1:", part1_with_intervals(lines, row_of_interest=2000000)) # 2000000 or 10
     # print('This might take a while')
     # print("Score for part 2:", part2(lines, limit=4000000))
     print("Score for part 2:", part2supersmart(lines, limit=4000000))
